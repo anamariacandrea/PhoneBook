@@ -1,0 +1,4 @@
+C:\Users\candr\source\repos\PhoneBookModel\obj\Debug\netcoreapp3.1\PhoneBookModel.csprojAssemblyReference.cache
+C:\Users\candr\source\repos\PhoneBookModel\obj\Debug\netcoreapp3.1\PhoneBookModel.AssemblyInfoInputs.cache
+C:\Users\candr\source\repos\PhoneBookModel\obj\Debug\netcoreapp3.1\PhoneBookModel.AssemblyInfo.cs
+C:\Users\candr\source\repos\PhoneBookModel\obj\Debug\netcoreapp3.1\PhoneBookModel.csproj.CoreCompileInputs.cache
