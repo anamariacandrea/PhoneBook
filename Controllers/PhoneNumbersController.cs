@@ -2,179 +2,107 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Net.Http;
-using System.Text;
-using Newtonsoft.Json;
 using PhoneBookModel.Data;
 using PhoneBookModel.Models;
 
-namespace PhoneBook.Controllers
+namespace PhoneBookWebAPI.Controllers
 {
-    public class PhoneNumbersController : Controller
+    [Route("api/[controller]")]
+    [ApiController]
+    public class PhoneNumbersController : ControllerBase
     {
         private readonly PhoneBookContext _context;
-        private string _baseURL = "http://localhost:56890/api/PhoneNumbers";
 
         public PhoneNumbersController(PhoneBookContext context)
         {
             _context = context;
         }
 
-        // GET: PhoneNumbers
-        public async Task<IActionResult> Index()
+        // GET: api/PhoneNumbers
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<PhoneNumber>>> GetPhoneNumbers()
         {
-            var client=new HttpClient();
-            var response = await client.GetAsync(_baseURL);
-            if (response.IsSuccessStatusCode)
-            {
-                var phoneNumber = JsonConvert.DeserializeObject<List<PhoneNumber>>(await response.Content.
-                ReadAsStringAsync());
-                return View(phoneNumber);
-            }
-            return NotFound();
+            return await _context.PhoneNumbers.ToListAsync();
         }
 
-        // GET: PhoneNumbers/Details/5
-        public async Task<IActionResult> Details(int? id)
+        // GET: api/PhoneNumbers/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<PhoneNumber>> GetPhoneNumber(int id)
         {
-            if (id == null)
-            {
-                return new BadRequestResult();
-            }
-            var client = new HttpClient();
-            var response = await client.GetAsync($"{ _baseURL}/{id.Value}");
-            if (response.IsSuccessStatusCode)
-            {
-                var phoneNumber = JsonConvert.DeserializeObject<PhoneNumber>(
-                await response.Content.ReadAsStringAsync());
-                return View(phoneNumber);
-            }
-            return NotFound();
-        }
-       /* var phoneNumber = await _context.PhoneNumbers
-                .FirstOrDefaultAsync(m => m.PhoneNumberID == id);
+            var phoneNumber = await _context.PhoneNumbers.FindAsync(id);
+
             if (phoneNumber == null)
             {
                 return NotFound();
             }
 
-            return View(phoneNumber);
-        }*/
-
-        // GET: PhoneNumbers/Create
-        public IActionResult Create()
-        {
-            return View();
+            return phoneNumber;
         }
 
-        // POST: PhoneNumbers/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("PhoneNumberID,PersonID,MailID,PhoneNumbers")] PhoneNumber phoneNumber)
+        // PUT: api/PhoneNumbers/5
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutPhoneNumber(int id, PhoneNumber phoneNumber)
         {
-            if (!ModelState.IsValid) return View(phoneNumber);
+            if (id != phoneNumber.PhoneNumberID)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(phoneNumber).State = EntityState.Modified;
+
             try
             {
-                var client = new HttpClient();
-                string json = JsonConvert.SerializeObject(phoneNumber);
-                var response = await client.PostAsync(_baseURL,
-                new StringContent(json, Encoding.UTF8, "application/json"));
-                if (response.IsSuccessStatusCode)
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!PhoneNumberExists(id))
                 {
-                    return RedirectToAction("Index");
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
                 }
             }
-            catch (Exception ex)
-{
-ModelState.AddModelError(string.Empty, $"Unable to create record: {ex.Message}");
-}
-return View(phoneNumber);
-}
 
-        // GET: PhoneNumbers/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+            return NoContent();
+        }
+
+        // POST: api/PhoneNumbers
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPost]
+        public async Task<ActionResult<PhoneNumber>> PostPhoneNumber(PhoneNumber phoneNumber)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            _context.PhoneNumbers.Add(phoneNumber);
+            await _context.SaveChangesAsync();
 
+            return CreatedAtAction("GetPhoneNumber", new { id = phoneNumber.PhoneNumberID }, phoneNumber);
+        }
+
+        // DELETE: api/PhoneNumbers/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePhoneNumber(int id)
+        {
             var phoneNumber = await _context.PhoneNumbers.FindAsync(id);
             if (phoneNumber == null)
             {
                 return NotFound();
             }
-            return View(phoneNumber);
+
+            _context.PhoneNumbers.Remove(phoneNumber);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
-        // POST: PhoneNumbers/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit([Bind("PhoneNumberID,PersonID,MailID,PhoneNumbers")] PhoneNumber phoneNumber)
-        {
-            if (!ModelState.IsValid) 
-                return View(phoneNumber);
-            var client = new HttpClient();
-            string json = JsonConvert.SerializeObject(phoneNumber);
-            var response = await client.PutAsync($"{_baseURL}/{phoneNumber.PhoneNumberID}",
-            new StringContent(json, Encoding.UTF8, "application/json"));
-            if (response.IsSuccessStatusCode)
-            {
-                return RedirectToAction("Index");
-            }
-            return View(phoneNumber);
-        }
-
-        // GET: PhoneNumbers/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return new BadRequestResult();
-            }
-            var client = new HttpClient();
-            var response = await client.GetAsync($"{_baseURL}/{id.Value}");
-            if (response.IsSuccessStatusCode)
-            {
-                var phoneNumber = JsonConvert.DeserializeObject<PhoneNumber>(await response.Content.ReadAsStringAsync());
-                return View(phoneNumber);
-            }
-            return new NotFoundResult();
-        }
-
-        // POST: PhoneNumbers/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete([Bind("PhoneNumberID")] PhoneNumber phoneNumber)
-        {
-            try
-            {
-                var client = new HttpClient();
-                HttpRequestMessage request =
-                new HttpRequestMessage(HttpMethod.Delete, $"{_baseURL}/{phoneNumber.PhoneNumberID}")
-                {
-                    Content = new StringContent(JsonConvert.SerializeObject(phoneNumber), Encoding.UTF8, "application/json")
-                };
-                var response = await client.SendAsync(request);
-                return RedirectToAction("Index");
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError(string.Empty, $"Unable to delete record: {ex.Message}");
-            }
-            return View(phoneNumber);
-        }
-
-        /*private bool PhoneNumberExists(int id)
+        private bool PhoneNumberExists(int id)
         {
             return _context.PhoneNumbers.Any(e => e.PhoneNumberID == id);
-        }*/
+        }
     }
 }
